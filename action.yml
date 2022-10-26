@@ -23,7 +23,7 @@ runs:
     - name: Create checksum file
       id: checksum
       run: |
-        filename=${{ inputs.bundle_name }}_SHA256SUM
+        filename=${{ steps.bundle.outputs.filename }}_SHA256SUM
         npx --package=armada-cli@0.1.4 --yes armada checksum  ${{ steps.bundle.outputs.filename }} > $filename
         echo "filename=$filename" >> $GITHUB_OUTPUT
       shell: bash
