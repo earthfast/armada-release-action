@@ -1,0 +1,37 @@
+name: Armada Release
+description: Create an Armada bundle and upload it as a release asset.
+inputs:
+  build_dir:
+    description: Project build directory
+    required: true
+  bundle_name:
+    description: Name for the bundle
+    required: true
+  github_token:
+    description: Auth token for the GitHub CLI
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Create bundle
+      id: bundle
+      run: |
+        filename=$(npx --package=armada-cli@0.1.4 --yes armada bundle ${{ inputs.bundle_name }} ${{ inputs.build_dir }})
+        echo "filename=$filename" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Create checksum file
+      id: checksum
+      run: |
+        filename=${{ inputs.bundle_name }}_SHA256SUM
+        npx --package=armada-cli@0.1.4 --yes armada checksum  ${{ steps.bundle.outputs.filename }} > $filename
+        echo "filename=$filename" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Upload bundle and checksum to the release
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        gh release upload ${{ github.ref_name }} ${{ steps.bundle.outputs.filename }}
+        gh release upload ${{ github.ref_name }} ${{ steps.checksum.outputs.filename }}
+      shell: bash
