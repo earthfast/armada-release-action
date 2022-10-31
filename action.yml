@@ -16,7 +16,7 @@ runs:
     - name: Create bundle
       id: bundle
       run: |
-        filename=$(npx --package=armada-cli@0.1.4 --yes armada bundle ${{ inputs.bundle_name }} ${{ inputs.build_dir }})
+        filename=$(npx --package=armada-cli@0.1.7 --yes armada bundle ${{ inputs.bundle_name }} ${{ inputs.build_dir }})
         echo "filename=$filename" >> $GITHUB_OUTPUT
       shell: bash
 
@@ -24,7 +24,7 @@ runs:
       id: checksum
       run: |
         filename=${{ steps.bundle.outputs.filename }}_SHA256SUM
-        npx --package=armada-cli@0.1.4 --yes armada checksum  ${{ steps.bundle.outputs.filename }} > $filename
+        npx --package=armada-cli@0.1.7 --yes armada checksum  ${{ steps.bundle.outputs.filename }} > $filename
         echo "filename=$filename" >> $GITHUB_OUTPUT
       shell: bash
 
