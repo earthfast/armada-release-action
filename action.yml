@@ -10,21 +10,31 @@ inputs:
   github_token:
     description: Auth token for the GitHub CLI
     required: true
+outputs:
+  bundle_url:
+    description: Download URL for the bundle
+    value: ${{ steps.urls.outputs.bundle }}
+  checksum:
+    description: Integrity checksum of the bundle
+    value: ${{ steps.checksum.outputs.hash }}
 runs:
   using: composite
   steps:
     - name: Create bundle
       id: bundle
       run: |
-        filename=$(npx --package=armada-cli@0.1.7 --yes armada bundle ${{ inputs.bundle_name }} ${{ inputs.build_dir }})
+        filename="$(npx --package=armada-cli@0.1.7 --yes armada bundle ${{ inputs.bundle_name }} ${{ inputs.build_dir }})"
         echo "filename=$filename" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Create checksum file
       id: checksum
       run: |
-        filename=${{ steps.bundle.outputs.filename }}_SHA256SUM
-        npx --package=armada-cli@0.1.7 --yes armada checksum  ${{ steps.bundle.outputs.filename }} > $filename
+        hash="$(npx --package=armada-cli@0.1.7 --yes armada checksum ${{ steps.bundle.outputs.filename }})"
+        echo "hash=$hash" >> $GITHUB_OUTPUT
+
+        filename="${{ steps.bundle.outputs.filename }}_SHA256SUM"
+        echo "$hash" > $filename
         echo "filename=$filename" >> $GITHUB_OUTPUT
       shell: bash
 
@@ -34,4 +44,13 @@ runs:
       run: |
         gh release upload ${{ github.ref_name }} ${{ steps.bundle.outputs.filename }}
         gh release upload ${{ github.ref_name }} ${{ steps.checksum.outputs.filename }}
+      shell: bash
+
+    - name: Retrieve URLs
+      id: urls
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        bundle="$(gh release view ${{ github.ref_name }} --json assets --jq '.assets[] | select(.name == "${{ steps.bundle.outputs.filename }}") | .url')"
+        echo "bundle=$bundle" >> $GITHUB_OUTPUT
       shell: bash
